@@ -1,0 +1,151 @@
+
+<?php
+// to enable php 
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET,POST,DELETE,PUT,OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+header("Content-Type: application/json");
+$host = 'localhost';
+$db = 'cinehub';
+$user = 'root';
+$pass = '';
+
+// Connect to database
+try {
+    $conn = new PDO("mysql:host=$host;dbname=$db", $user, $pass);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    echo json_encode(['error' => "Database connection failed: " . $e->getMessage()]);
+    exit();
+}
+
+// Function to calculate cosine similarity between two movies
+function cosine_similarity($movieA, $movieB, $conn) {
+    $stmt = $conn->prepare("SELECT user_id, movie_id, playcount FROM playcount WHERE movie_id = :movieA OR movie_id = :movieB");
+    $stmt->execute(['movieA' => $movieA, 'movieB' => $movieB]);
+    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $playcountA = [];
+    $playcountB = [];
+
+    foreach ($data as $row) {
+        if ($row['movie_id'] == $movieA) {
+            $playcountA[$row['user_id']] = $row['playcount'];
+        } else if ($row['movie_id'] == $movieB) {
+            $playcountB[$row['user_id']] = $row['playcount'];
+        }
+    }
+
+    $commonUsers = array_intersect_key($playcountA, $playcountB);
+    if (empty($commonUsers)) {
+        return 0;
+    }
+
+    $dotProduct = 0;
+    $normA = 0;
+    $normB = 0;
+
+    foreach ($commonUsers as $user => $playcount) {
+        $dotProduct += $playcountA[$user] * $playcountB[$user];
+        $normA += pow($playcountA[$user], 2);
+        $normB += pow($playcountB[$user], 2);
+    }
+
+    return $dotProduct / (sqrt($normA) * sqrt($normB));
+}
+
+// Function to get movie recommendations for a user
+function get_recommendations($user_id, $conn) {
+    // Fetch movies rated by the user
+    $stmt = $conn->prepare("SELECT movie_id FROM playcount WHERE user_id = :user_id");
+    $stmt->execute(['user_id' => $user_id]);
+    $userMovies = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    if (empty($userMovies)) {
+        return []; // No movies rated by the user
+    }
+
+    // Fetch other movies not rated by the user
+    $stmt = $conn->prepare("SELECT id FROM movie WHERE id NOT IN (SELECT movie_id FROM playcount WHERE user_id = :user_id)");
+    $stmt->execute(['user_id' => $user_id]);
+    $otherMovies = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    if (empty($otherMovies)) {
+        return []; // No other movies to recommend
+    }
+
+    $movieSimilarities = [];
+
+    // Calculate similarities between user's watched movies and other movies
+    foreach ($userMovies as $userMovie) {
+        foreach ($otherMovies as $otherMovie) {
+            $similarity = cosine_similarity($userMovie, $otherMovie, $conn);
+            if ($similarity > 0) {
+                $movieSimilarities[$otherMovie] = $similarity;
+            }
+        }
+    }
+
+    // Sort the movies by similarity score in descending order
+    arsort($movieSimilarities);
+
+    return array_keys($movieSimilarities); // Return movie IDs of the top similar movies
+}
+
+// Check if the user_id is provided in the GET request
+if (isset($_GET['user_id'])) {
+    $user_id = intval($_GET['user_id']);
+    
+    if ($user_id > 0) {
+        // Fetch recommendations
+        $recommendations = get_recommendations($user_id, $conn);
+        
+        // Return the recommendations as JSON
+        if (!empty($recommendations)) {
+            $recommendation_details = [];
+            foreach ($recommendations as $movie_id) {
+                // Fetch movie details including id, name, and image
+                $stmt = $conn->prepare("SELECT id, name, image FROM movie WHERE id = :movie_id");
+                $stmt->execute(['movie_id' => $movie_id]);
+                $movie = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                // Append movie details to the recommendations
+                if ($movie) {
+                    $recommendation_details[] = [
+                        'id' => $movie['id'],
+                        'name' => $movie['name'],
+                        'image' => $movie['image']
+                    ];
+                }
+            }
+
+            echo json_encode([
+                'status' => 'success',
+                'recommendations' => $recommendation_details
+            ]);
+        } else {
+            echo json_encode([
+                'status' => 'no_recommendations',
+                'message' => 'No recommendations found for this user.'
+            ]);
+        }
+    } else {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Invalid user ID.'
+        ]);
+    }
+} else {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'User ID not provided.'
+    ]);
+}
+?>
+
+db: playcount
+	- id
+	- playcout
+	- user_id
+	- movie_id

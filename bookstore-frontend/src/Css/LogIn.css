@@ -1,0 +1,134 @@
+/* logIn.css */
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: rgb(241, 239, 239);
+}
+
+.login {
+    position: absolute;
+    top: 12rem;
+}
+
+.login .mod-login {
+    padding: 25px 50px 50px 25px;
+}
+
+.mod-login {
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 810px;
+    display: flex;
+}
+
+.login-title {
+    width: 810px;
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.login-other {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.mod-login {
+    margin-top: 20px;
+}
+
+.mod-login-col1 {
+    margin-right: 30px;
+    width: 800px;
+}
+
+.mod-login-col2 {
+    margin-left: 30px;
+    width: 500px;
+}
+
+.mod-input {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+label::after {
+    content: '*';
+}
+
+input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+a {
+    text-decoration: none;
+}
+
+.link {
+    color: rgb(10, 71, 239);
+}
+
+/* Add more styles as needed */
+.login-btn {
+    background-color: hsl(31, 100%, 47%);
+}
+
+.signup-btn {
+    width: 300px;
+    background-color: hsl(31, 100%, 47%);
+}
+
+.mod-third-party-login-fb {
+    background-color: hsl(220, 82%, 33%);
+}
+
+.mod-third-party-login-google {
+    background-color: hsla(21, 95%, 42%, 0.89);
+}
+
+.mod-button {
+    color: white;
+    border: none;
+    margin: 10px;
+    width: 250px;
+    height: 39px;
+}
+
+.mod-login-change-sms-type {
+    position: absolute;
+    right: 0;
+    color: #049cb9;
+    bottom: -12px;
+}
+
+.mod-third-party-signup-bd {
+    display: flex;
+}
+
+.mod-button-signup {
+    color: white;
+    border: none;
+    border-radius: 3px;
+    font-size: large;
+    margin: 10px;
+    width: 120px;
+    height: 40px;
+}
+
+span {
+    font-size: 12px;
+}
